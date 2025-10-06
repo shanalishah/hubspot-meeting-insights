@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: meeting-insights
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 18
+      - key: PORT
+        value: 10000
+      # Set the following via Render dashboard with your real values
+      # - key: APP_BASE_URL
+      #   value: https://your-service.onrender.com
+      # - key: HUBSPOT_CLIENT_ID
+      # - key: HUBSPOT_CLIENT_SECRET
+      # - key: HUBSPOT_REDIRECT_URI
+      # - key: HUBSPOT_APP_ID
+      # - key: HUBSPOT_WEBHOOK_SECRET
+      # - key: OPENAI_API_KEY
+

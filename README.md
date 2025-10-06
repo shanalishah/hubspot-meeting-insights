@@ -51,12 +51,16 @@ SESSION_SECRET=dev-secret
 
 Note: `.env.example` is omitted here to avoid workspace restrictions; copy the above block.
 
+Auto-base detection: If `APP_BASE_URL` is not set, the server will infer it from each incoming request’s protocol/host (supports proxies/ngrok via `x-forwarded-proto` and `x-forwarded-host`). This ensures the landing links work in local, ngrok, Render.
+
 ## Local Development
 1. Install deps: `npm install`
 2. Start dev server: `npm run dev`
 3. Visit install URL: `http://localhost:3000/oauth/install`
 
 Health check: `GET /health`
+
+Debug: `GET /webhooks/debug` shows the last 10 webhook deliveries received (count + timestamp).
 
 ## Webhooks
 Configure HubSpot webhooks to POST to `POST /webhooks/hubspot`. Signature verification uses `X-HubSpot-Signature` with base64 HMAC SHA-256 of `method + uri + body + appId`.
@@ -78,10 +82,12 @@ Configure HubSpot webhooks to POST to `POST /webhooks/hubspot`. Signature verifi
 
 ## Deploy (Render)
 1. Create a new Web Service on Render, connect this repo.
-2. Build command: `npm install && npm run build`
-3. Start command: `node dist/server.js`
-4. Set environment variables on Render matching `.env`.
-5. Update `APP_BASE_URL` and `HUBSPOT_REDIRECT_URI` to your Render URL.
+2. Add a `render.yaml` or use the UI with:
+   - Build command: `npm install && npm run build`
+   - Start command: `npm start`
+3. Set environment variables on Render matching `.env`.
+4. Update `APP_BASE_URL` and `HUBSPOT_REDIRECT_URI` to your Render URL.
+5. After deploy, visit `https://your-service.onrender.com/` to check the landing page.
 
 ## Deploy (Vercel)
 1. Set environment variables in Vercel (same as above)

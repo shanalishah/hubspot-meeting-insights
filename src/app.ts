@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import { router as oauthRouter } from './oauth';
 import { router as webhooksRouter } from './webhooks';
 import { router as crmCardRouter } from './crmCard';
+import { getRequestBaseUrl } from './utils';
 
 const app = express();
 
@@ -24,8 +25,8 @@ app.get('/health', (_req: Request, res: Response) => {
 });
 
 // Root - minimal HTML landing
-app.get('/', (_req: Request, res: Response) => {
-  const base = (process.env.APP_BASE_URL || '').replace(/\/$/, '') || 'http://localhost:' + (process.env.PORT || '3000');
+app.get('/', (req: Request, res: Response) => {
+  const base = getRequestBaseUrl(req);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.status(200).send(
     [

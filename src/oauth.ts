@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { Client } from '@hubspot/api-client';
 import crypto from 'crypto';
+import { getRequestBaseUrl } from './utils';
 
 // Simple in-memory token store. Replace with DB for production.
 type AppInstall = {
@@ -24,9 +25,9 @@ function getScopes(): string {
   return (process.env.HUBSPOT_SCOPES || '').split(/[ ,]+/).filter(Boolean).join(' ');
 }
 
-router.get('/install', async (_req: Request, res: Response) => {
+router.get('/install', async (req: Request, res: Response) => {
   const clientId = process.env.HUBSPOT_CLIENT_ID;
-  const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getBaseUrl()}/oauth/callback`;
+  const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getRequestBaseUrl(req)}/oauth/callback`;
   const scopes = getScopes();
   if (!clientId) {
     return res.status(500).send('HUBSPOT_CLIENT_ID not configured');
@@ -41,7 +42,7 @@ router.get('/callback', async (req: Request, res: Response) => {
   if (!code) {
     return res.status(400).send('Missing code');
   }
-  const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getBaseUrl()}/oauth/callback`;
+  const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getRequestBaseUrl(req)}/oauth/callback`;
   const client = new Client({});
   try {
     const tokenResponse = await (client.oauth.tokensApi as any).createToken(

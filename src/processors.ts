@@ -122,11 +122,36 @@ export async function processHubSpotEvent(events: any[]): Promise<void> {
             input = `Note: ${note.properties?.hs_note_body || ''}`;
           }
 
-          const insight = await callOpenAI(input);
+          let insight: MeetingInsight;
+          try {
+            insight = await callOpenAI(input);
+          } catch (e) {
+            try {
+              insight = await callOpenAI(`Return STRICT JSON only.\n\n${input}`);
+            } catch (e2) {
+              // eslint-disable-next-line no-console
+              console.warn('LLM parse failed', { err: (e as Error)?.message || String(e) });
+              return;
+            }
+          }
 
           // Write back and collect associations
           const sourceType = subscription.includes('meeting') ? 'meetings' : 'notes';
-          await writeNoteAndTasks(client, { sourceObjectType: sourceType, sourceObjectId: objectId, insight });
+          // Best-effort default owner: meeting creator email if available
+          let organizerEmail: string | undefined;
+          try {
+            if (sourceType === 'meetings') {
+              const meeting = await client.crm.objects.basicApi.getById('meetings', objectId, ['hs_created_by_user_id']);
+              const creatorId = meeting.properties?.hs_created_by_user_id;
+              if (creatorId) {
+                const owners = await (client as any).crm.owners.ownersApi.getPage();
+                const match = owners?.results?.find((o: any) => String(o.id) === String(creatorId));
+                organizerEmail = match?.email || match?.user?.email;
+              }
+            }
+          } catch {}
+
+          await writeNoteAndTasks(client, { sourceObjectType: sourceType, sourceObjectId: objectId, insight, portalId, defaultOwnerEmail: organizerEmail });
 
           // Fetch associations from source to store latest insight per associated record
           for (const t of ['contacts', 'deals', 'companies'] as const) {

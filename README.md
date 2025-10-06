@@ -82,6 +82,15 @@ Configure HubSpot webhooks to POST to `POST /webhooks/hubspot`. Signature verifi
 4. Copy `Client ID`, `Client Secret`, `App ID` into your `.env`.
 5. Configure Webhooks: subscribe to meeting and note events; set URL to `https://<your-host>/webhooks/hubspot` and set `WEBHOOK_SECRET` to the same as `HUBSPOT_WEBHOOK_SECRET`.
 
+## Scopes & Permissions
+Use exactly these scopes (comma-separated):
+
+`crm.objects.meetings.read,crm.objects.notes.read,crm.objects.notes.read,crm.objects.notes.write,crm.objects.tasks.write,crm.objects.contacts.read,crm.objects.deals.read,crm.objects.companies.read`
+
+- conversations.read is intentionally excluded.
+- Change them by editing `HUBSPOT_SCOPES` in your `.env` and mirroring the same scopes in your HubSpot Developer App.
+- Quick check: open `GET /debug/scopes` to see what the app will request during OAuth.
+
 ## Post-Install Success & Error Pages
 - After OAuth, the app redirects to `/oauth/success?portalId=...` showing quick links (Health, Webhooks Debug, Re-install) and a CRM Card tester form.
 - On error, it redirects to `/oauth/error?reason=...` with troubleshooting tips (Redirect URL must match, verify scopes, reinstall, check logs and HubSpot Webhook Logs).

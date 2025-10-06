@@ -21,18 +21,25 @@ function getBaseUrl(): string {
   return fromEnv.replace(/\/$/, '');
 }
 
-function getScopes(): string {
-  return (process.env.HUBSPOT_SCOPES || '').split(/[ ,]+/).filter(Boolean).join(' ');
+function getScopesRaw(): string {
+  return String(process.env.HUBSPOT_SCOPES || '').trim();
 }
 
 router.get('/install', async (req: Request, res: Response) => {
   const clientId = process.env.HUBSPOT_CLIENT_ID;
   const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getRequestBaseUrl(req)}/oauth/callback`;
-  const scopes = getScopes();
+  const scopes = getScopesRaw();
   if (!clientId) {
     return res.status(500).send('HUBSPOT_CLIENT_ID not configured');
   }
   const state = crypto.randomBytes(16).toString('hex');
+  // Log scopes (no secrets) and warn on conversations.read
+  // eslint-disable-next-line no-console
+  console.log(`OAuth scopes: ${scopes}`);
+  if (scopes.includes('conversations.read')) {
+    // eslint-disable-next-line no-console
+    console.warn('WARNING: conversations.read is not required for Meeting Insights and may fail without proper permissions.');
+  }
   const authUrl = `https://app.hubspot.com/oauth/authorize?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}&state=${encodeURIComponent(state)}`;
   res.redirect(authUrl);
 });

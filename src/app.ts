@@ -96,6 +96,11 @@ app.get('/oauth/error', (req: Request, res: Response) => {
 app.use('/oauth', oauthRouter);
 app.use('/webhooks', webhooksRouter);
 app.use('/crm-card', crmCardRouter);
+app.get('/debug/scopes', (req: Request, res: Response) => {
+  const envScopes = String(process.env.HUBSPOT_SCOPES || '');
+  const effective = envScopes; // used directly in /oauth/install
+  res.status(200).json({ envScopes, effectiveScopesUsedForAuth: effective });
+});
 app.get('/debug/state', (req: Request, res: Response) => {
   const objectId = String(req.query.objectId || '');
   if (!objectId) return res.status(400).json({ error: 'Missing objectId' });

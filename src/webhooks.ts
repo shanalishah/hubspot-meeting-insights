@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import crypto from 'crypto';
 import { processHubSpotEvent } from './processors';
+import { logInfo, verifySignatureV3 } from './utils';
 
 export const router = express.Router();
 const recentDeliveries: Array<{ ts: string; count: number }> = [];
@@ -10,9 +11,7 @@ function verifySignature(req: Request): boolean {
   const signature = req.get('X-HubSpot-Signature-v3');
   const rawBody = (req as any).rawBody || '';
   const secret = process.env.HUBSPOT_WEBHOOK_SECRET || '';
-  if (!signature || !secret) return false;
-  const computed = crypto.createHmac('sha256', secret).update(rawBody).digest('base64');
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computed));
+  return verifySignatureV3(rawBody, signature, secret);
 }
 
 router.post('/hubspot', async (req: Request, res: Response) => {
@@ -21,9 +20,7 @@ router.post('/hubspot', async (req: Request, res: Response) => {
   }
   try {
     const events = Array.isArray(req.body) ? req.body : [];
-    // Log valid deliveries (non-sensitive)
-    // eslint-disable-next-line no-console
-    console.log('Webhook received', { count: events.length });
+    logInfo('Webhook received', { count: events.length });
     recentDeliveries.push({ ts: new Date().toISOString(), count: events.length });
     if (recentDeliveries.length > 10) recentDeliveries.shift();
     // Fire-and-forget processing; respond quickly to HubSpot

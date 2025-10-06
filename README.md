@@ -62,6 +62,11 @@ Health check: `GET /health`
 
 Debug: `GET /webhooks/debug` shows the last 10 webhook deliveries received (count + timestamp).
 
+## Troubleshooting
+- Redirect mismatch: ensure `.env` APP_BASE_URL and `HUBSPOT_REDIRECT_URI` match your ngrok/Render URL, and HubSpot app uses the same Redirect URL.
+- 401 signature failures: confirm `HUBSPOT_WEBHOOK_SECRET` matches in both your app and HubSpot settings. Use `GET /webhooks/debug` to see if deliveries are arriving.
+- Card shows "No insight yet": ensure the meeting/note was created after app install, is associated to a record, and you query `/crm-card?portalId=...&objectId=THE_ASSOCIATED_RECORD_ID` (contact/deal/company). You can also check `/debug/state?objectId=...`.
+
 ## Webhooks
 Configure HubSpot webhooks to POST to `POST /webhooks/hubspot`. Signature verification uses `X-HubSpot-Signature` with base64 HMAC SHA-256 of `method + uri + body + appId`.
 

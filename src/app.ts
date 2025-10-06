@@ -50,6 +50,15 @@ app.get('/', (req: Request, res: Response) => {
 app.use('/oauth', oauthRouter);
 app.use('/webhooks', webhooksRouter);
 app.use('/crm-card', crmCardRouter);
+app.get('/debug/state', (req: Request, res: Response) => {
+  const objectId = String(req.query.objectId || '');
+  if (!objectId) return res.status(400).json({ error: 'Missing objectId' });
+  // naive lookup across types
+  const { getLatestInsight } = require('./processors');
+  const insight = getLatestInsight('', objectId);
+  if (!insight) return res.status(404).json({ error: 'No insight yet' });
+  res.json(insight);
+});
 
 // Error handler
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

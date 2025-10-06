@@ -3,6 +3,7 @@ import { Client } from '@hubspot/api-client';
 import OpenAI from 'openai';
 import { writeNoteAndTasks } from './writers';
 import { getAccessTokenForPortal } from './oauth';
+import { withRetry, logWarn, logInfo } from './utils';
 
 export const MeetingInsightSchema = z.object({
   summary: z.union([z.string(), z.array(z.string())]).transform((v) => Array.isArray(v) ? v.join('\n') : v).pipe(z.string().min(1)),
@@ -114,11 +115,11 @@ export async function processHubSpotEvent(events: any[]): Promise<void> {
           // Fetch details and synthesize a transcript/notes input
           let input = '';
           if (subscription.includes('meeting')) {
-            const meeting = await fetchMeetingDetails(client, objectId);
+            const meeting = await withRetry(() => fetchMeetingDetails(client, objectId));
             input = `Title: ${meeting.properties?.hs_meeting_title || 'Untitled'}\nBody: ${meeting.properties?.hs_meeting_body || ''}`;
           } else {
             // Note created/updated; fetch note body
-            const note = await client.crm.objects.basicApi.getById('notes', objectId, ['hs_note_body']);
+            const note = await withRetry(() => client.crm.objects.basicApi.getById('notes', objectId, ['hs_note_body']));
             input = `Note: ${note.properties?.hs_note_body || ''}`;
           }
 
@@ -129,8 +130,7 @@ export async function processHubSpotEvent(events: any[]): Promise<void> {
             try {
               insight = await callOpenAI(`Return STRICT JSON only.\n\n${input}`);
             } catch (e2) {
-              // eslint-disable-next-line no-console
-              console.warn('LLM parse failed', { err: (e as Error)?.message || String(e) });
+              logWarn('LLM parse failed', { err: (e as Error)?.message || String(e), eventId, portalId, objectId });
               return;
             }
           }
@@ -156,7 +156,7 @@ export async function processHubSpotEvent(events: any[]): Promise<void> {
           // Fetch associations from source to store latest insight per associated record
           for (const t of ['contacts', 'deals', 'companies'] as const) {
             try {
-              const assoc = await (client.crm.objects as any).associationsApi.getAll(sourceType, objectId, t);
+              const assoc = await withRetry(() => (client.crm.objects as any).associationsApi.getAll(sourceType, objectId, t));
               const ids = (assoc?.results || []).map((r: any) => String(r.toObjectId || r.toObject?.id || r.id)).filter(Boolean);
               for (const rid of ids) {
                 latestInsightsByPortalAndObject.set(keyByRecord(t, rid), insight);
@@ -165,6 +165,7 @@ export async function processHubSpotEvent(events: any[]): Promise<void> {
               // ignore
             }
           }
+          logInfo('Processed event', { eventId, portalId, objectId });
         }
       });
     } catch {

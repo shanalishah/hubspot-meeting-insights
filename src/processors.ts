@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Client } from '@hubspot/api-client';
 import OpenAI from 'openai';
 import { writeNoteAndTasks } from './writers';
-import { getAccessTokenForPortal } from './oauth';
+// Private App token mode - read token from env
 import { withRetry, logWarn, logInfo } from './utils';
 
 export const MeetingInsightSchema = z.object({
@@ -107,9 +107,9 @@ export async function processHubSpotEvent(events: any[]): Promise<void> {
       processedEventCache.add(eventId);
 
       enqueue(async () => {
-        const accessToken = await getAccessTokenForPortal(portalId);
-        if (!accessToken) return;
-        const client = new Client({ accessToken });
+        const token = process.env.HUBSPOT_PRIVATE_APP_TOKEN || '';
+        if (!token) return;
+        const client = new Client({ accessToken: token });
 
         if (subscription.includes('meeting') || subscription.includes('note')) {
           // Fetch details and synthesize a transcript/notes input

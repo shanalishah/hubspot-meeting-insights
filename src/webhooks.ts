@@ -31,6 +31,11 @@ router.post('/hubspot', async (req: Request, res: Response) => {
   }
 });
 
+// Probe route for GET to verify deployment health of webhooks path
+router.get('/hubspot', async (_req: Request, res: Response) => {
+  res.status(200).send('ok');
+});
+
 router.get('/debug', (_req: Request, res: Response) => {
   res.status(200).json({ recent: recentDeliveries.slice().reverse() });
 });

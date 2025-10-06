@@ -36,17 +36,12 @@ Create a `.env` in the project root with:
 PORT=3010
 APP_BASE_URL=http://localhost:3010
 
-HUBSPOT_CLIENT_ID=your_client_id
-HUBSPOT_CLIENT_SECRET=your_client_secret
-HUBSPOT_SCOPES=crm.objects.meetings.read crm.objects.notes.read crm.objects.notes.write crm.objects.tasks.write crm.objects.contacts.read crm.objects.deals.read crm.objects.companies.read
-HUBSPOT_REDIRECT_URI=http://localhost:3010/oauth/callback
-
-HUBSPOT_APP_ID=your_app_id
+# Private App token mode
+HUBSPOT_PRIVATE_APP_TOKEN=pat-************************
 HUBSPOT_WEBHOOK_SECRET=your_webhook_secret
 
+# Optional
 OPENAI_API_KEY=optional_for_stub
-
-SESSION_SECRET=dev-secret
 ```
 
 Note: `.env.example` is omitted here to avoid workspace restrictions; copy the above block.
@@ -75,21 +70,15 @@ Configure HubSpot webhooks to POST to `POST /webhooks/hubspot`. Signature verifi
 ## CRM Card
 `GET /crm-card?portalId={portalId}&objectId={objectId}` returns the latest processed insight (stored in-memory).
 
-## HubSpot Developer App Setup (Public App)
-1. Create a Public App in HubSpot Developer account.
-2. Set OAuth Redirect URL to `http://localhost:3000/oauth/callback` (and your deployed URL later).
-3. Add scopes: `crm.objects.meetings.read crm.objects.notes.read crm.objects.notes.write crm.objects.tasks.write crm.objects.contacts.read crm.objects.deals.read crm.objects.companies.read`.
-4. Copy `Client ID`, `Client Secret`, `App ID` into your `.env`.
-5. Configure Webhooks: subscribe to meeting and note events; set URL to `https://<your-host>/webhooks/hubspot` and set `WEBHOOK_SECRET` to the same as `HUBSPOT_WEBHOOK_SECRET`.
+## Private App (easiest) Setup
+1. In HubSpot, create a Private App and copy the token.
+2. Set webhooks in the Private App: URL = `${APP_BASE_URL}/webhooks/hubspot`, Secret = `HUBSPOT_WEBHOOK_SECRET`, Subscriptions = Meetings + Notes (create/update).
+3. Set `HUBSPOT_PRIVATE_APP_TOKEN` in `.env`.
+4. Run `npm run dev:tunnel` and test `/health`, `/webhooks/debug`, and the CRM card tester.
+5. Note: Private Apps cannot edit webhook subscriptions via API; configure in app settings.
 
 ## Scopes & Permissions
-Use exactly these scopes (comma-separated):
-
-`crm.objects.meetings.read,crm.objects.notes.read,crm.objects.notes.read,crm.objects.notes.write,crm.objects.tasks.write,crm.objects.contacts.read,crm.objects.deals.read,crm.objects.companies.read`
-
-- conversations.read is intentionally excluded.
-- Change them by editing `HUBSPOT_SCOPES` in your `.env` and mirroring the same scopes in your HubSpot Developer App.
-- Quick check: open `GET /debug/scopes` to see what the app will request during OAuth.
+Not required in Private App mode. Use the Private App’s permissions and configured webhooks.
 
 ## Post-Install Success & Error Pages
 - After OAuth, the app redirects to `/oauth/success?portalId=...` showing quick links (Health, Webhooks Debug, Re-install) and a CRM Card tester form.

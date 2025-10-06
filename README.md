@@ -55,8 +55,10 @@ Auto-base detection: If `APP_BASE_URL` is not set, the server will infer it from
 
 ## Local Development
 1. Install deps: `npm install`
-2. Start dev server: `npm run dev`
-3. Visit install URL: `http://localhost:3000/oauth/install`
+2. Start dev + tunnel: `npm run dev:tunnel` (starts server and ngrok)
+3. Copy the printed Public URL and paste into `.env` lines shown (APP_BASE_URL, HUBSPOT_REDIRECT_URI)
+4. In HubSpot app settings, set Redirect URL and Webhook URL to the printed values
+5. Visit install URL printed by the tunnel script
 
 Health check: `GET /health`
 
@@ -79,6 +81,11 @@ Configure HubSpot webhooks to POST to `POST /webhooks/hubspot`. Signature verifi
 3. Add scopes: `crm.objects.meetings.read crm.objects.notes.read crm.objects.notes.write crm.objects.tasks.write crm.objects.contacts.read crm.objects.deals.read crm.objects.companies.read`.
 4. Copy `Client ID`, `Client Secret`, `App ID` into your `.env`.
 5. Configure Webhooks: subscribe to meeting and note events; set URL to `https://<your-host>/webhooks/hubspot` and set `WEBHOOK_SECRET` to the same as `HUBSPOT_WEBHOOK_SECRET`.
+
+## Post-Install Success & Error Pages
+- After OAuth, the app redirects to `/oauth/success?portalId=...` showing quick links (Health, Webhooks Debug, Re-install) and a CRM Card tester form.
+- On error, it redirects to `/oauth/error?reason=...` with troubleshooting tips (Redirect URL must match, verify scopes, reinstall, check logs and HubSpot Webhook Logs).
+- Replace `<your-host>` with your base URL (ngrok or Render). Screenshots: TODO add.
 
 ## Tunneling with ngrok (Local Webhooks)
 1. Run: `ngrok http 3010`

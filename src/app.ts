@@ -46,6 +46,52 @@ app.get('/', (req: Request, res: Response) => {
   );
 });
 
+// OAuth success page
+app.get('/oauth/success', (req: Request, res: Response) => {
+  const base = getRequestBaseUrl(req);
+  const portalId = String(req.query.portalId || '');
+  const now = new Date().toISOString();
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send([
+    '<!doctype html>',
+    '<html><head><meta charset="utf-8"><title>Connected</title></head><body>',
+    '<h1>✅ Connected to HubSpot Successfully</h1>',
+    `<p><strong>Portal:</strong> ${portalId || '(unknown)'}<br/><strong>Time:</strong> ${now}</p>`,
+    '<h2>Quick Actions</h2>',
+    `<p><a href="${base}/health">Health</a> | <a href="${base}/webhooks/debug">Webhooks Debug</a> | <a href="${base}/oauth/install">Re-install</a></p>`,
+    '<h3>CRM Card Tester</h3>',
+    `<form method="get" action="${base}/crm-card">`,
+    `<input type="hidden" name="portalId" value="${portalId}">`,
+    '<label>Object ID: <input type="text" name="objectId" required></label> ',
+    '<button type="submit">Fetch</button>',
+    '</form>',
+    '<p><em>If the CRM Card says “No insight yet,” create or end a meeting or add/update a note associated with a contact, deal, or company.</em></p>',
+    '</body></html>'
+  ].join(''));
+});
+
+// OAuth error page
+app.get('/oauth/error', (req: Request, res: Response) => {
+  const base = getRequestBaseUrl(req);
+  const reason = String(req.query.reason || 'unknown');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send([
+    '<!doctype html>',
+    '<html><head><meta charset="utf-8"><title>OAuth Error</title></head><body>',
+    '<h1>❌ OAuth Error</h1>',
+    `<p><strong>Reason:</strong> ${reason}</p>`,
+    '<h2>Troubleshooting</h2>',
+    '<ul>',
+    `<li>Redirect URL in HubSpot app must match ${base}/oauth/callback</li>`,
+    '<li>Verify OAuth scopes</li>',
+    `<li>Reinstall via <a href="${base}/oauth/install">Install</a></li>`,
+    '<li>Check server logs and HubSpot Webhook Logs</li>',
+    '</ul>',
+    `<p><a href="${base}/health">Health</a> | <a href="${base}/oauth/install">Install</a></p>`,
+    '</body></html>'
+  ].join(''));
+});
+
 // Routers
 app.use('/oauth', oauthRouter);
 app.use('/webhooks', webhooksRouter);

@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { Client } from '@hubspot/api-client';
 import crypto from 'crypto';
-import { getRequestBaseUrl } from './utils';
+import { getRequestBaseUrl, logInfo, logWarn } from './utils';
 
 // Simple in-memory token store. Replace with DB for production.
 type AppInstall = {
@@ -40,7 +40,8 @@ router.get('/install', async (req: Request, res: Response) => {
 router.get('/callback', async (req: Request, res: Response) => {
   const { code } = req.query as { code?: string };
   if (!code) {
-    return res.status(400).send('Missing code');
+    const base = getRequestBaseUrl(req);
+    return res.redirect(`${base}/oauth/error?reason=missing_code`);
   }
   const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getRequestBaseUrl(req)}/oauth/callback`;
   const client = new Client({});
@@ -64,10 +65,13 @@ router.get('/callback', async (req: Request, res: Response) => {
     const portalId = String(portalInfo.hubId || portalInfo.hub_id);
 
     installs.set(portalId, { portalId, accessToken, refreshToken, expiresAt });
-
-    res.status(200).send('Installation successful. You can close this window.');
+    logInfo('OAuth success', { portalId });
+    const base = getRequestBaseUrl(req);
+    return res.redirect(`${base}/oauth/success?portalId=${encodeURIComponent(portalId)}`);
   } catch (err) {
-    res.status(500).send('OAuth failed');
+    logWarn('OAuth failed', {});
+    const base = getRequestBaseUrl(req);
+    return res.redirect(`${base}/oauth/error?reason=oauth_failed`);
   }
 });
 

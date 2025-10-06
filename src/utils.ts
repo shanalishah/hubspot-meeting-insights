@@ -32,6 +32,12 @@ export function logInfo(message: string, ctx?: Record<string, unknown>) {
   // eslint-disable-next-line no-console
   console.log(JSON.stringify({ level: 'info', message, ...masked }));
 }
+export function maskToken(token?: string): string {
+  if (!token) return '';
+  if (token.length <= 8) return '*'.repeat(token.length);
+  return `${token.slice(0, 4)}***${token.slice(-4)}`;
+}
+
 
 export function logWarn(message: string, ctx?: Record<string, unknown>) {
   const masked = maskCtx(ctx);

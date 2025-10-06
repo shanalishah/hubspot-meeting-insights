@@ -44,7 +44,7 @@ router.get('/callback', async (req: Request, res: Response) => {
   const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getBaseUrl()}/oauth/callback`;
   const client = new Client({});
   try {
-    const tokenResponse = await client.oauth.tokensApi.createToken(
+    const tokenResponse = await (client.oauth.tokensApi as any).createToken(
       'authorization_code',
       code,
       redirectUri,
@@ -59,7 +59,7 @@ router.get('/callback', async (req: Request, res: Response) => {
 
     // Fetch portal info using the token
     const authedClient = new Client({ accessToken });
-    const portalInfo = await authedClient.oauth.accessTokensApi.getAccessToken(accessToken);
+    const portalInfo = await (authedClient.oauth.accessTokensApi as any).getAccessToken(accessToken);
     const portalId = String(portalInfo.hubId || portalInfo.hub_id);
 
     installs.set(portalId, { portalId, accessToken, refreshToken, expiresAt });
@@ -78,7 +78,7 @@ export async function getAccessTokenForPortal(portalId: string): Promise<string 
   // refresh
   const client = new Client({});
   const redirectUri = process.env.HUBSPOT_REDIRECT_URI || `${getBaseUrl()}/oauth/callback`;
-  const refreshResponse = await client.oauth.tokensApi.createToken(
+  const refreshResponse = await (client.oauth.tokensApi as any).createToken(
     'refresh_token',
     undefined,
     redirectUri,

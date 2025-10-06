@@ -23,6 +23,28 @@ app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'ok' });
 });
 
+// Root - minimal HTML landing
+app.get('/', (_req: Request, res: Response) => {
+  const base = (process.env.APP_BASE_URL || '').replace(/\/$/, '') || 'http://localhost:' + (process.env.PORT || '3000');
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.status(200).send(
+    [
+      '<!doctype html>',
+      '<html><head><meta charset="utf-8"><title>Meeting Insights</title></head><body>',
+      '<h1>Meeting Insights (HubSpot)</h1>',
+      `<p><a href="${base}/health">Health</a> | <a href="${base}/oauth/install">Install OAuth</a></p>`,
+      '<h2>CRM Card Tester</h2>',
+      `<form method="get" action="${base}/crm-card">`,
+      '<label>Portal ID: <input type="text" name="portalId" required></label><br/>',
+      '<label>Object ID: <input type="text" name="objectId" required></label><br/>',
+      '<button type="submit">Fetch</button>',
+      '</form>',
+      '<p>See README for full setup (OAuth, webhooks, ngrok).</p>',
+      '</body></html>'
+    ].join('')
+  );
+});
+
 // Routers
 app.use('/oauth', oauthRouter);
 app.use('/webhooks', webhooksRouter);

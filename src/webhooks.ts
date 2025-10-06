@@ -4,18 +4,14 @@ import { processHubSpotEvent } from './processors';
 
 export const router = express.Router();
 
+// Signature v3: X-HubSpot-Signature-v3 = base64(hmacSha256(secret, rawBody))
 function verifySignature(req: Request): boolean {
-  const signature = req.get('X-HubSpot-Signature');
-  const method = req.method;
-  const uri = req.originalUrl.split('?')[0];
-  const body = (req as any).rawBody || JSON.stringify(req.body || {});
-  const appId = process.env.HUBSPOT_APP_ID || '';
-  const clientSecret = process.env.HUBSPOT_WEBHOOK_SECRET || process.env.HUBSPOT_CLIENT_SECRET || '';
-  if (!signature || !clientSecret) return false;
-
-  const sourceString = method + uri + body + appId;
-  const hash = crypto.createHmac('sha256', clientSecret).update(sourceString).digest('base64');
-  return hash === signature;
+  const signature = req.get('X-HubSpot-Signature-v3');
+  const rawBody = (req as any).rawBody || '';
+  const secret = process.env.HUBSPOT_WEBHOOK_SECRET || '';
+  if (!signature || !secret) return false;
+  const computed = crypto.createHmac('sha256', secret).update(rawBody).digest('base64');
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(computed));
 }
 
 router.post('/hubspot', async (req: Request, res: Response) => {
@@ -24,6 +20,9 @@ router.post('/hubspot', async (req: Request, res: Response) => {
   }
   try {
     const events = Array.isArray(req.body) ? req.body : [];
+    // Log valid deliveries (non-sensitive)
+    // eslint-disable-next-line no-console
+    console.log('Webhook received', { count: events.length });
     // Fire-and-forget processing; respond quickly to HubSpot
     void processHubSpotEvent(events);
     res.status(200).send('ok');

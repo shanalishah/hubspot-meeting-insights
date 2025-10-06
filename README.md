@@ -33,13 +33,13 @@ vercel.json
 Create a `.env` in the project root with:
 
 ```
-PORT=3000
-APP_BASE_URL=http://localhost:3000
+PORT=3010
+APP_BASE_URL=http://localhost:3010
 
 HUBSPOT_CLIENT_ID=your_client_id
 HUBSPOT_CLIENT_SECRET=your_client_secret
 HUBSPOT_SCOPES=crm.objects.meetings.read crm.objects.notes.read crm.objects.notes.write crm.objects.tasks.write crm.objects.contacts.read crm.objects.deals.read crm.objects.companies.read
-HUBSPOT_REDIRECT_URI=http://localhost:3000/oauth/callback
+HUBSPOT_REDIRECT_URI=http://localhost:3010/oauth/callback
 
 HUBSPOT_APP_ID=your_app_id
 HUBSPOT_WEBHOOK_SECRET=your_webhook_secret
@@ -72,7 +72,7 @@ Configure HubSpot webhooks to POST to `POST /webhooks/hubspot`. Signature verifi
 5. Configure Webhooks: subscribe to meeting and note events; set URL to `https://<your-host>/webhooks/hubspot` and set `WEBHOOK_SECRET` to the same as `HUBSPOT_WEBHOOK_SECRET`.
 
 ## Tunneling with ngrok (Local Webhooks)
-1. Run: `ngrok http 3000`
+1. Run: `ngrok http 3010`
 2. Use the https URL from ngrok in your HubSpot app for webhooks and OAuth redirect (if needed).
 3. Set `APP_BASE_URL` to the ngrok URL while testing.
 
@@ -87,6 +87,13 @@ Configure HubSpot webhooks to POST to `POST /webhooks/hubspot`. Signature verifi
 1. Set environment variables in Vercel (same as above)
 2. Use the included `vercel.json`. Routes are served by `api/index.ts`.
 3. Update `APP_BASE_URL` and `HUBSPOT_REDIRECT_URI` to your production URL.
+
+## Finding portalId and objectId
+- portalId: visible in your HubSpot portal URL or via OAuth token introspection.
+- objectId:
+  - meetings: open a meeting record; the URL contains the ID
+  - notes: open a note activity; use the engagement ID
+  - contacts/deals/companies: open the record; the URL contains the ID
 
 ## Notes
 - Token storage is in-memory for demo purposes; replace with persistent storage for production.
